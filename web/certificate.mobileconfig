@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>PayloadType</key><string>Configuration</string>
+  <key>PayloadVersion</key><integer>1</integer>
+  <key>PayloadIdentifier</key><string>local.godot.phonemotion.__PROFILE_ID__</string>
+  <key>PayloadUUID</key><string>__PROFILE_ID__</string>
+  <key>PayloadDisplayName</key><string>Godot Phone Motion Local CA</string>
+  <key>PayloadContent</key>
+  <array>
+    <dict>
+      <key>PayloadType</key><string>com.apple.security.root</string>
+      <key>PayloadVersion</key><integer>1</integer>
+      <key>PayloadIdentifier</key><string>local.godot.phonemotion.__PAYLOAD_ID__</string>
+      <key>PayloadUUID</key><string>__PAYLOAD_ID__</string>
+      <key>PayloadDisplayName</key><string>Godot Phone Motion Local CA</string>
+      <key>PayloadCertificateFileName</key><string>godot-phone-motion.crt</string>
+      <key>PayloadContent</key><data>__CERTIFICATE__</data>
+    </dict>
+  </array>
+</dict>
+</plist>

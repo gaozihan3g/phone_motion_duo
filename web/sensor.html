@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<meta name="theme-color" content="#101518">
+<title>双人手机手柄</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #101518;
+  --well: #191f23;
+  --line: #374348;
+  --text: #f1f5ef;
+  --muted: #adbbbf;
+  --accent: #a6f0c9;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, sans-serif; }
+main {
+  max-width: 51rem;
+  min-height: 100svh;
+  margin: auto;
+  display: grid;
+  align-content: center;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+header { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 14px; }
+h1 { font-size: clamp(24px, 6vw, 38px); line-height: 1; margin: 0; }
+#connection { padding: 5px 10px; border: 1px solid var(--line); border-radius: 99px; color: var(--muted); font-size: .8rem; text-align: center; }
+body[data-joined] #connection { color: var(--accent); }
+.gamepad {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--well);
+  padding: clamp(8px, 3vw, 22px);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.gamepad[aria-disabled="true"] { opacity: .48; }
+#stick {
+  position: relative;
+  width: clamp(108px, 35vw, 188px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid #526168;
+  background: repeating-radial-gradient(circle, #141b1e 0 18px, #263338 19px 20px);
+  cursor: grab;
+  touch-action: none;
+}
+#thumb {
+  position: absolute;
+  inset: 32%;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid #658078;
+  background: #2b393b;
+  box-shadow: 0 4px 10px #0007;
+  pointer-events: none;
+}
+#thumb::after { content: ""; width: 28%; aspect-ratio: 1; border: 1px solid var(--accent); border-radius: 50%; }
+#stick[data-held] #thumb { background: var(--accent); }
+#stick[data-held] #thumb::after { border-color: var(--bg); }
+.actions {
+  --key: clamp(39px, 11vw, 60px);
+  display: grid;
+  grid-template-columns: repeat(3, var(--key));
+  grid-template-rows: repeat(3, var(--key));
+  gap: 2px;
+}
+button { font: inherit; cursor: pointer; }
+button:disabled { cursor: default; }
+.key {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #526168;
+  border-radius: 50%;
+  color: var(--accent);
+  background: #273236;
+  font-size: clamp(20px, 6vw, 26px);
+  font-weight: 750;
+  touch-action: none;
+}
+.key[aria-pressed="true"] { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+.key:nth-child(1) { grid-area: 3 / 2; }
+.key:nth-child(2) { grid-area: 2 / 3; }
+.key:nth-child(3) { grid-area: 2 / 1; }
+.key:nth-child(4) { grid-area: 1 / 2; }
+.sensor-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; }
+#status { flex: 1 0 9rem; margin: 0; color: var(--muted); font-size: .88rem; }
+.action {
+  min-height: 44px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--well);
+  color: var(--text);
+  font-size: .85rem;
+}
+.action:disabled { opacity: .48; }
+#hint { margin: 4px 0 0; color: var(--muted); font-size: .8rem; }
+a { justify-self: start; margin-top: 8px; color: var(--muted); font-size: .8rem; text-underline-offset: 4px; }
+[hidden] { display: none; }
+@media (orientation: landscape) and (max-height: 475px) {
+  .gamepad { padding-block: 8px; padding-inline: clamp(16px, 8vw, 65px); }
+  #stick { width: clamp(105px, 40svh, 176px); }
+  .actions { --key: clamp(37px, 13svh, 54px); }
+}
+</style>
+</head>
+<body>
+<main>
+  <header><h1 id="title">手机手柄</h1><span id="connection" role="status">正在连接</span></header>
+  <div class="gamepad" aria-label="手柄" role="group" aria-disabled="true">
+    <div id="stick" role="group" aria-label="摇杆"><span id="thumb" aria-hidden="true"></span></div>
+    <div class="actions" role="group" aria-label="动作键">
+      <button class="key" type="button" data-bit="0" aria-pressed="false" disabled>A</button>
+      <button class="key" type="button" data-bit="1" aria-pressed="false" disabled>B</button>
+      <button class="key" type="button" data-bit="2" aria-pressed="false" disabled>X</button>
+      <button class="key" type="button" data-bit="3" aria-pressed="false" disabled>Y</button>
+    </div>
+  </div>
+  <div class="sensor-bar">
+    <p id="status" role="status">等待开启传感器</p>
+    <button class="action" id="enable" type="button" disabled>开启传感器</button>
+    <button class="action" id="reconnect" type="button" hidden>重新连接</button>
+  </div>
+  <p id="hint"></p>
+  <a id="setup">证书安装说明</a>
+</main>
+<script>
+  const config = __CONFIG__;
+  const enable = document.querySelector('#enable');
+  const reconnect = document.querySelector('#reconnect');
+  const connection = document.querySelector('#connection');
+  const sensorStatus = document.querySelector('#status');
+  const hint = document.querySelector('#hint');
+  const gamepad = document.querySelector('.gamepad');
+  const pad = document.querySelector('#stick');
+  const thumb = document.querySelector('#thumb');
+  const buttons = [...document.querySelectorAll('.key')];
+  const buttonPointers = new Map();
+  let stickPointer = null;
+  let stickX = 0;
+  let stickY = 0;
+  let buttonMask = 0;
+  let moveFrame = 0;
+  const motion = window.DeviceMotionEvent;
+  const orientation = window.DeviceOrientationEvent;
+  const supported = window.isSecureContext && Boolean(motion);
+  const labels = {
+    waiting: ['传感器未开启', '开启后可把运动数据和手机姿态传到 Godot。'],
+    denied: ['运动权限未授予', '请允许读取动作与方向，再点击开启。若浏览器已记住拒绝，需检查站点权限。'],
+    unsupported: ['此页面无法读取传感器', '请用支持动作传感器的手机浏览器，并确认本地证书已受信任。'],
+    no_data: ['等待传感器数据', '试着移动或转动手机。若一直无数据，请检查浏览器的动作传感器权限。'],
+    live: ['正在发送传感器数据', ''],
+    paused: ['已暂停采集', '回到本页面后会继续采集。']
+  };
+  let state = supported ? 'waiting' : 'unsupported';
+  let enabled = false;
+  let requesting = false;
+  let socket;
+  let joined = false;
+  let occupied = false;
+  let lastReading = -Infinity;
+  let lastSent = -Infinity;
+  let pose = null;
+  let lastPoseSent = -Infinity;
+  let connectionTimer;
+  let retryTimer;
+
+  document.querySelector('#title').textContent = '玩家 ' + config.player;
+  document.title = '玩家 ' + config.player + ' · 手机手柄';
+  document.querySelector('#setup').href = 'http://' + location.hostname + ':' +
+    config.setupPort + location.pathname;
+  if (config.player === 2) document.body.style.setProperty('--accent', '#ffd492');
+
+  function send(message) {
+    if (joined && socket.readyState === WebSocket.OPEN && socket.bufferedAmount < 8192) {
+      socket.send(JSON.stringify(message));
+    }
+  }
+
+  function sendInput() {
+    if (moveFrame) cancelAnimationFrame(moveFrame);
+    moveFrame = 0;
+    send({type: 'input', x: stickX, y: stickY, buttons: buttonMask});
+  }
+
+  function updateStick(event) {
+    const bounds = pad.getBoundingClientRect();
+    const travel = bounds.width * 0.32;
+    const dx = event.clientX - bounds.left - bounds.width / 2;
+    const dy = event.clientY - bounds.top - bounds.height / 2;
+    const divisor = Math.max(travel, Math.hypot(dx, dy));
+    stickX = dx / divisor;
+    stickY = -dy / divisor;
+    thumb.style.transform = 'translate(' + (stickX * travel) + 'px,' + (-stickY * travel) + 'px)';
+  }
+
+  function centerStick() {
+    stickPointer = null;
+    stickX = 0;
+    stickY = 0;
+    thumb.style.transform = '';
+    pad.removeAttribute('data-held');
+  }
+
+  function updateButtons() {
+    buttonMask = 0;
+    for (const bit of buttonPointers.values()) buttonMask |= 1 << bit;
+    for (const button of buttons) {
+      button.setAttribute('aria-pressed', String(Boolean(buttonMask & (1 << Number(button.dataset.bit)))));
+    }
+  }
+
+  function releaseInput() {
+    centerStick();
+    buttonPointers.clear();
+    updateButtons();
+    sendInput();
+  }
+
+  pad.addEventListener('pointerdown', event => {
+    if (!joined || document.hidden || stickPointer !== null || event.button !== 0) return;
+    event.preventDefault();
+    pad.setPointerCapture(event.pointerId);
+    stickPointer = event.pointerId;
+    pad.setAttribute('data-held', '');
+    updateStick(event);
+    sendInput();
+  });
+  pad.addEventListener('pointermove', event => {
+    if (event.pointerId !== stickPointer) return;
+    updateStick(event);
+    if (!moveFrame) moveFrame = requestAnimationFrame(sendInput);
+  });
+  const releaseEvents = ['pointerup', 'pointercancel', 'lostpointercapture'];
+  for (const type of releaseEvents) {
+    pad.addEventListener(type, event => {
+      if (event.pointerId !== stickPointer) return;
+      centerStick();
+      sendInput();
+    });
+  }
+  for (const button of buttons) {
+    button.addEventListener('pointerdown', event => {
+      if (!joined || document.hidden || event.button !== 0) return;
+      event.preventDefault();
+      button.setPointerCapture(event.pointerId);
+      buttonPointers.set(event.pointerId, Number(button.dataset.bit));
+      updateButtons();
+      sendInput();
+    });
+    for (const type of releaseEvents) {
+      button.addEventListener(type, event => {
+        if (!buttonPointers.delete(event.pointerId)) return;
+        updateButtons();
+        sendInput();
+      });
+    }
+  }
+  gamepad.addEventListener('contextmenu', event => event.preventDefault());
+  window.addEventListener('blur', releaseInput);
+
+  function updateControls() {
+    const [label, help] = state === 'live' && !joined
+      ? ['正在采集，等待连接', 'Godot 连接恢复后会继续发送。']
+      : labels[state];
+    if (sensorStatus.textContent !== label) sensorStatus.textContent = label;
+    if (hint.textContent !== help) hint.textContent = help;
+    enable.hidden = !supported || enabled;
+    enable.disabled = !joined || requesting;
+    gamepad.setAttribute('aria-disabled', String(!joined));
+    for (const button of buttons) button.disabled = !joined;
+  }
+
+  function setState(next) {
+    if (state === next) return;
+    state = next;
+    updateControls();
+    send({type: 'status', state});
+  }
+
+  function connect() {
+    if (document.hidden || (socket && socket.readyState !== WebSocket.CLOSED)) return;
+    clearTimeout(retryTimer);
+    reconnect.hidden = true;
+    occupied = false;
+    connection.textContent = '正在连接';
+    const candidate = new WebSocket('wss://' + location.hostname + ':' + config.socketPort + '/');
+    socket = candidate;
+    connectionTimer = setTimeout(() => candidate.close(), 5000);
+    candidate.onopen = () => {
+      candidate.send(JSON.stringify({type: 'join', player: config.player, token: config.token}));
+    };
+    candidate.onmessage = ({data}) => {
+      const message = JSON.parse(data);
+      if (message.type === 'joined') {
+        clearTimeout(connectionTimer);
+        joined = true;
+        document.body.setAttribute('data-joined', '');
+        connection.textContent = '已连接 Godot';
+        lastSent = -Infinity;
+        updateControls();
+        send({type: 'status', state});
+        sendInput();
+        sendPose();
+      } else if (message.type === 'busy') {
+        occupied = true;
+      }
+    };
+    candidate.onclose = () => {
+      clearTimeout(connectionTimer);
+      joined = false;
+      releaseInput();
+      document.body.removeAttribute('data-joined');
+      connection.textContent = occupied ? '该玩家席位已占用' : 'Godot 连接已断开';
+      reconnect.hidden = false;
+      updateControls();
+      if (!occupied && !document.hidden) retryTimer = setTimeout(connect, 1500);
+    };
+  }
+
+  const numberOrNull = value => Number.isFinite(value) ? value : null;
+
+  function readMotion(event) {
+    if (!enabled || document.hidden) return;
+    const linear = event.acceleration;
+    const gravity = event.accelerationIncludingGravity;
+    const rate = event.rotationRate;
+    const values = [
+      linear?.x, linear?.y, linear?.z,
+      gravity?.x, gravity?.y, gravity?.z,
+      rate?.alpha, rate?.beta, rate?.gamma
+    ].map(numberOrNull);
+    if (values.every(value => value === null)) return;
+    const now = performance.now();
+    lastReading = now;
+    setState('live');
+    if (joined && now - lastSent >= 1000 / 30) {
+      lastSent = now;
+      send({type: 'sample', values});
+    }
+  }
+
+  function sendPose() {
+    if (!joined || document.hidden || !pose) return;
+    lastPoseSent = performance.now();
+    send({type: 'pose', angles: pose});
+  }
+
+  function readOrientation(event) {
+    if (document.hidden) return;
+    const angles = [event.alpha, event.beta, event.gamma];
+    if (!angles.every(Number.isFinite)) {
+      if (pose) send({type: 'pose', angles: null});
+      pose = null;
+      return;
+    }
+    pose = angles;
+    if (performance.now() - lastPoseSent >= 1000 / 30) sendPose();
+  }
+
+  async function requestSensor(api) {
+    if (!api) return false;
+    try {
+      return typeof api.requestPermission !== 'function' || await api.requestPermission() === 'granted';
+    } catch {
+      return false;
+    }
+  }
+
+  enable.addEventListener('click', async () => {
+    requesting = true;
+    updateControls();
+    // Start both requests in the click gesture, before awaiting either prompt.
+    const [motionGranted, orientationGranted] = await Promise.all([
+      requestSensor(motion), requestSensor(orientation)
+    ]);
+    if (orientationGranted) window.addEventListener('deviceorientation', readOrientation);
+    if (motionGranted) {
+      window.addEventListener('devicemotion', readMotion);
+    }
+    enabled = motionGranted;
+    requesting = false;
+    setState(motionGranted ? (document.hidden ? 'paused' : 'no_data') : 'denied');
+    updateControls();
+  });
+
+  reconnect.addEventListener('click', connect);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      clearTimeout(retryTimer);
+      releaseInput();
+      pose = null;
+      lastPoseSent = -Infinity;
+      send({type: 'pose', angles: null});
+      if (enabled) setState('paused');
+    } else {
+      if (enabled) {
+        lastReading = -Infinity;
+        setState('no_data');
+      }
+      if (!occupied) connect();
+    }
+  });
+  window.addEventListener('pagehide', () => {
+    clearTimeout(retryTimer);
+    releaseInput();
+    pose = null;
+    lastPoseSent = -Infinity;
+    socket?.close();
+  });
+  window.addEventListener('pageshow', event => {
+    if (event.persisted && !occupied) connect();
+  });
+  setInterval(() => {
+    if (state === 'live' && performance.now() - lastReading > 1100) setState('no_data');
+    send({type: 'status', state});
+    sendPose();
+    if (!document.hidden) sendInput();
+  }, 700);
+  updateControls();
+  connect();
+</script>
+</body>
+</html>

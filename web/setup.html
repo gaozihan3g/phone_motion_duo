@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>连接手机手柄</title>
+<style>
+:root{color-scheme:dark;--bg:#101518;--card:#191f23;--line:#374348;--text:#f1f5ef;--muted:#adbbbf;--accent:#a6f0c9}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,sans-serif}
+main{max-width:33rem;margin:auto;padding:clamp(24px,7vw,56px) 20px}
+h1{font-size:clamp(29px,7vw,40px);line-height:1.15;margin:0 0 10px}
+p{margin:0 0 18px;color:var(--muted)}
+a{color:var(--accent);text-underline-offset:4px}
+.primary{display:block;padding:12px;text-align:center;border-radius:12px;background:var(--accent);color:#101518;font-weight:750;text-decoration:none}
+section{margin-top:20px;padding:16px 18px;background:var(--card);border:1px solid var(--line);border-radius:16px}
+h2{font-size:18px;margin:0 0 8px}
+details{margin-top:8px}
+summary{cursor:pointer;padding:8px 0;font-weight:650}
+ol{margin:4px 0 8px;padding-left:24px;color:var(--muted)}
+li{margin:7px 0}
+</style>
+</head>
+<body>
+<main>
+  <h1 id="title">连接手机手柄</h1>
+  <p>用 Safari 或 Chrome 打开本页，并保持与电脑连接同一 Wi‑Fi。</p>
+  <a class="primary" id="open">打开手柄</a>
+  <section>
+    <h2>首次使用</h2>
+    <p>先安装并信任这台电脑生成的本地证书，再点「打开手柄」。</p>
+    <details id="ios">
+      <summary>iPhone / iPad</summary>
+      <ol>
+        <li>在 Safari 中<a href="/motion.mobileconfig">下载证书描述文件</a>。</li>
+        <li>打开「设置 → 已下载描述文件」，安装 Godot Phone Motion Local CA。</li>
+        <li>到「设置 → 通用 → 关于本机 → 证书信任设置」，开启此证书的完全信任，再回到本页。</li>
+      </ol>
+    </details>
+    <details id="android">
+      <summary>Android</summary>
+      <ol>
+        <li><a href="/motion.crt">下载 CA 证书</a>。</li>
+        <li>在系统设置里搜索「安装证书」或「CA 证书」，选择下载的 godot-phone-motion.crt。安装完成后回到 Chrome。</li>
+      </ol>
+    </details>
+  </section>
+</main>
+<script>
+  const config = __CONFIG__;
+  document.querySelector('#title').textContent = '玩家 ' + config.player + ' · 手机手柄';
+  document.querySelector('#open').href = 'https://' + location.hostname + ':' +
+    config.httpsPort + location.pathname;
+  if (config.player === 2) document.body.style.setProperty('--accent', '#ffd492');
+  const platform = navigator.userAgent;
+  if (/iPhone|iPad|iPod/.test(platform) || (/Macintosh/.test(platform) && navigator.maxTouchPoints > 1)) {
+    document.querySelector('#ios').open = true;
+  } else if (/Android/.test(platform)) {
+    document.querySelector('#android').open = true;
+  }
+</script>
+</body>
+</html>
